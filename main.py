@@ -15,29 +15,32 @@ driver = ydb.Driver(endpoint=os.getenv('YDB_ENDPOINT'), database=os.getenv('YDB_
 driver.wait(fail_fast=True, timeout=5)
 # Create the session pool instance to manage YDB sessions.
 pool = ydb.SessionPool(driver)
+#ID_START_POINT = os.getenv('ID_START_POINT')
+#ID_END_POINT = os.getenv('ID_END_POINT')
+#ID_CARRIER = os.getenv('ID_CARRIER')
 
 
 def handler(event, context):
     id_carrier = event['queryStringParameters'].get('id_carrier')
-    id_end_point = int(event['queryStringParameters'].get('id_end_point'))
-    id_start_point = int(event['queryStringParameters'].get('id_start_point'))
+    id_end_point = event['queryStringParameters'].get('id_end_point')
+    id_start_point = event['queryStringParameters'].get('id_start_point')
     print(f"id_carrier = {id_carrier}. id_end_point = {id_end_point}. id_start_point = {id_start_point}")
-
     def execute_query(session):
         # create the transaction and execute query / Начинаем транзакцию и создаем запрос.
+        # СЕЙЧАС НЕ РАБОТАЕТ ПАРСИНГ $id_start_opint $id_end_point
         return session.transaction().execute(
             """
-            DECLARE $ID_START_POINT AS int64;
-            DECLARE $ID_END_POINT AS int64;
+            DECLARE $id_start_opint AS String;
+            DECLARE $id_end_point AS String;
             SELECT 
                 *
             FROM 
                 `carrieRCosTTable`
             WHERE  
-                `ID_START_POINT` = 13215 and `ID_END_POINT` = 13
+                id_start_point = $id_start_point and id_end_point = $id_end_point
             """, {
-                '$ID_START_POINT': id_start_point,
-                '$ID_END_POINT': id_end_point,
+                '$id_start_point': id_start_point,
+                '$id_end_point': id_end_point,
             },
             commit_tx=True,
             settings=ydb.BaseRequestSettings().with_timeout(3).with_operation_timeout(2)
@@ -47,5 +50,5 @@ def handler(event, context):
     result = pool.retry_operation_sync(execute_query)
     return {
         'statusCode': 200,
-        'body': result[0].rows[0].get(id_carrier),  # ответ в Int
+        'body': result[0].rows[0].get(id_carrier), #ответ в Int
     }
