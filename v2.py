@@ -17,35 +17,36 @@ pool = ydb.SessionPool(driver)
 
 
 def handler(event, context):
+    # из входящего jsonа получим данные строковых параметров
     id_carrier = int(event['queryStringParameters'].get('id_carrier'))
     id_end_point = int(event['queryStringParameters'].get('id_end_point'))
     id_start_point = int(event['queryStringParameters'].get('id_start_point'))
+    qwery = """
+        DECLARE $id_start_point AS int64;
+        DECLARE $id_end_point AS int64;
+
+        SELECT 
+            *
+        FROM 
+            carrieRCosTTable
+        WHERE  
+            id_start_point = $id_start_point and id_end_point = $id_end_point
+        """
 
     def execute_query(session):
-        # create the transaction and execute query / Начинаем транзакцию и создаем запрос.
-        qwery = """
-            DECLARE $id_start_point AS int64;
-            DECLARE $id_end_point AS int64;
-
-            SELECT 
-                *
-            FROM 
-                carrieRCosTTable
-            WHERE  
-                ID_START_POINT = $id_start_point and ID_END_POINT = $id_end_point
-            """
         prepared_query = session.prepare(qwery)
+        # Начинаем транзакцию и создаем запрос.
         return session.transaction().execute(prepared_query,
                                              {
-                                                 '$ID_START_POINT': id_start_point,
-                                                 '$ID_END_POINT': id_end_point,
+                                                 '$id_start_point': id_start_point,
+                                                 '$id_end_point': id_end_point,
                                              },
                                              commit_tx=True,
                                              settings=ydb.BaseRequestSettings().with_timeout(3).with_operation_timeout(
                                                  2)
                                              )
 
-    # Execute query with the retry_operation helper.
+    # Выполним запрос с помощью помощника retry_operation.
     result = pool.retry_operation_sync(execute_query)
     return {
         'statusCode': 200,
