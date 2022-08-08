@@ -8,14 +8,15 @@ import ydb
 # Скрипт работает так: Из таблички получается строка с парой ID_START_POINT ID_END_POINT
 # Дальше из строки возвращается требуемое значение по стоимости для ID_CARRIER
 
-# create driver in global space.
+# Создадим driver для подключения к БД.
+# YDB_ENDPOINT и YDB_DATABASE задаются на уровне функции
 
 driver = ydb.Driver(endpoint=os.getenv('YDB_ENDPOINT'), database=os.getenv('YDB_DATABASE'))
 # Wait for the driver to become active for requests.
 driver.wait(fail_fast=True, timeout=5)
 # Create the session pool instance to manage YDB sessions.
 pool = ydb.SessionPool(driver)
-
+# Заведем скрипт:
 qwery = """
     DECLARE $id_start_point AS int64;
     DECLARE $id_end_point AS int64;
