@@ -15,9 +15,6 @@ driver = ydb.Driver(endpoint=os.getenv('YDB_ENDPOINT'), database=os.getenv('YDB_
 driver.wait(fail_fast=True, timeout=5)
 # Create the session pool instance to manage YDB sessions.
 pool = ydb.SessionPool(driver)
-#ID_START_POINT = os.getenv('ID_START_POINT')
-#ID_END_POINT = os.getenv('ID_END_POINT')
-#ID_CARRIER = os.getenv('ID_CARRIER')
 
 
 def handler(event, context):
