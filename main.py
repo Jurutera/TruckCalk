@@ -19,13 +19,15 @@ pool = ydb.SessionPool(driver)
 
 def handler(event, context):
     id_carrier = event['queryStringParameters'].get('id_carrier')
-    id_end_point = event['queryStringParameters'].get('id_end_point')
-    id_start_point = event['queryStringParameters'].get('id_start_point')
-    print(f"id_carrier = {id_carrier}. id_end_point = {id_end_point}. id_start_point = {id_start_point}")
+
     def execute_query(session):
+        parms = {
+            '$id_start_point': event['queryStringParameters'].get('id_end_point'),
+            '$id_end_point': event['queryStringParameters'].get('id_start_point')}
+        print(f"id_carrier = {id_carrier}. parms = {parms}.")
         # create the transaction and execute query / Начинаем транзакцию и создаем запрос.
         # СЕЙЧАС НЕ РАБОТАЕТ ПАРСИНГ $id_start_opint $id_end_point
-        query="""
+        query = """
             DECLARE $id_start_opint AS String;
             DECLARE $id_end_point AS String;
             SELECT 
@@ -35,18 +37,18 @@ def handler(event, context):
             WHERE  
                 id_start_point = $id_start_point and id_end_point = $id_end_point
             """
+        print(query)
         prepared_query = session.prepare(query)
-        return session.transaction().execute(prepared_query, {
-                '$id_start_point': id_start_point,
-                '$id_end_point': id_end_point,
-            },
-            commit_tx=True,
-            settings=ydb.BaseRequestSettings().with_timeout(3).with_operation_timeout(2)
-        )
+        print(prepared_query)
+        return session.transaction().execute(prepared_query, parms,
+                                             commit_tx=True,
+                                             settings=ydb.BaseRequestSettings().with_timeout(3).with_operation_timeout(
+                                                 2)
+                                             )
 
     # Execute query with the retry_operation helper.
     result = pool.retry_operation_sync(execute_query)
     return {
         'statusCode': 200,
-        'body': result[0].rows[0].get(id_carrier), #ответ в Int
+        'body': result[0].rows[0].get(id_carrier),  # ответ в Int
     }
