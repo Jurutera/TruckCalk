@@ -25,8 +25,7 @@ def handler(event, context):
     def execute_query(session):
         # create the transaction and execute query / Начинаем транзакцию и создаем запрос.
         # СЕЙЧАС НЕ РАБОТАЕТ ПАРСИНГ $id_start_opint $id_end_point
-        return session.transaction().execute(
-            """
+        query="""
             DECLARE $id_start_opint AS String;
             DECLARE $id_end_point AS String;
             SELECT 
@@ -35,7 +34,9 @@ def handler(event, context):
                 `carrieRCosTTable`
             WHERE  
                 id_start_point = $id_start_point and id_end_point = $id_end_point
-            """, {
+            """
+        prepared_query = session.prepare(query)
+        return session.transaction().execute(prepared_query, {
                 '$id_start_point': id_start_point,
                 '$id_end_point': id_end_point,
             },
