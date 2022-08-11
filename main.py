@@ -37,10 +37,10 @@ def handler(event, context):
             """
         prepared_query = session.prepare(query)
         return session.transaction().execute(prepared_query,
-                                            {
-                                              '$id_start_point':  id_start_point,
-                                              '$id_end_point' : id_end_point,
-                                            },
+                                             {
+                                                 '$id_start_point': id_start_point,
+                                                 '$id_end_point': id_end_point,
+                                             },
                                              commit_tx=True,
                                              settings=ydb.BaseRequestSettings().with_timeout(3).with_operation_timeout(
                                                  2)
@@ -48,8 +48,9 @@ def handler(event, context):
 
     # Execute query with the retry_operation helper.
     result = pool.retry_operation_sync(execute_query)
-    #Собираем логи транзакции:
-    print(f"id_carrier = {id_carrier}. id_start_point = {id_start_point}, {type(id_start_point)}.id_end_point = {id_end_point}, {type(id_end_point)}.result_set = {result[0].rows[0]} result_func = {result[0].rows[0].get(id_carrier)}")
+    # Собираем логи транзакции:
+    print(
+        f"id_carrier = {id_carrier}. id_start_point = {id_start_point}, {type(id_start_point)}.id_end_point = {id_end_point}, {type(id_end_point)}.result_set = {result[0].rows[0]} result_func = {result[0].rows[0].get(id_carrier)}")
     return {
         'statusCode': 200,
         'body': result[0].rows[0].get(id_carrier),  # ответ в Int
