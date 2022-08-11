@@ -18,29 +18,29 @@ pool = ydb.SessionPool(driver)
 
 
 def handler(event, context):
+    # Получаем параметры запроса из event
     id_carrier = event['queryStringParameters'].get('id_carrier')
+    id_end_point = int(event['queryStringParameters'].get('id_end_point'))
+    id_start_point = int(event['queryStringParameters'].get('id_start_point'))
 
     def execute_query(session):
-        parms = {
-            '$id_start_point': event['queryStringParameters'].get('id_end_point'),
-            '$id_end_point': event['queryStringParameters'].get('id_start_point')}
-        print(f"id_carrier = {id_carrier}. parms = {parms}.")
         # create the transaction and execute query / Начинаем транзакцию и создаем запрос.
-        # СЕЙЧАС НЕ РАБОТАЕТ ПАРСИНГ $id_start_opint $id_end_point
         query = """
-            DECLARE $id_start_opint AS String;
-            DECLARE $id_end_point AS String;
+            DECLARE $id_start_point AS Int;
+            DECLARE $id_end_point AS Int;
             SELECT 
                 *
             FROM 
                 `carrieRCosTTable`
             WHERE  
-                id_start_point = $id_start_point and id_end_point = $id_end_point
+                ID_START_POINT = $id_start_point and ID_END_POINT = $id_end_point
             """
-        print(query)
         prepared_query = session.prepare(query)
-        print(prepared_query)
-        return session.transaction().execute(prepared_query, parms,
+        return session.transaction().execute(prepared_query,
+                                            {
+                                              '$id_start_point':  id_start_point,
+                                              '$id_end_point' : id_end_point,
+                                            },
                                              commit_tx=True,
                                              settings=ydb.BaseRequestSettings().with_timeout(3).with_operation_timeout(
                                                  2)
@@ -48,6 +48,8 @@ def handler(event, context):
 
     # Execute query with the retry_operation helper.
     result = pool.retry_operation_sync(execute_query)
+    #Собираем логи транзакции:
+    print(f"id_carrier = {id_carrier}. id_start_point = {id_start_point}, {type(id_start_point)}.id_end_point = {id_end_point}, {type(id_end_point)}.result_set = {result[0].rows[0]} result_func = {result[0].rows[0].get(id_carrier)}")
     return {
         'statusCode': 200,
         'body': result[0].rows[0].get(id_carrier),  # ответ в Int
